@@ -1,9 +1,9 @@
 <script setup>
-import GameView from './components/GameView.vue'
+import ObjectEditor from './components/ObjectEditor.vue'
 </script>
 
 <template>
-  <GameView msg="Vite + Vue" />
+  <ObjectEditor  />
 </template>
 
 <style scoped>

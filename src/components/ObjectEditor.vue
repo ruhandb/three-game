@@ -1,5 +1,6 @@
 <template>
-    <ObjectPainter :brickSize="config.blockLength" @on-set-block="onSetBlock"></ObjectPainter>
+    <ColorPalette :colors="control.colors" @on-set-block="onSetBlock"></ColorPalette>
+    <ToolBar :buttons="control.toolBarButtons"></ToolBar>
 </template>
 
 <script>
@@ -8,14 +9,21 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import RoundedBoxGeometry from '../util/RoundedBoxGeometry';
 import DataService from '../util/dataService'
 import { mouseEvents } from '../util/mouseEvents';
-import ObjectPainter from './ObjectPainter.vue';
+import ColorPalette from './ColorPalette.vue';
+import ToolBar from './ToolBar.vue';
 import bluePrintImage from "../assets/textures/blueprint.png";
-import indoor_ft from "../assets/skyboxes/indoor/indoor_ft.jpg";
+/* import indoor_ft from "../assets/skyboxes/indoor/indoor_ft.jpg";
 import indoor_bk from "../assets/skyboxes/indoor/indoor_bk.jpg";
 import indoor_lf from "../assets/skyboxes/indoor/indoor_lf.jpg";
 import indoor_rt from "../assets/skyboxes/indoor/indoor_rt.jpg";
 import indoor_up from "../assets/skyboxes/indoor/indoor_up.jpg";
-import indoor_dn from "../assets/skyboxes/indoor/indoor_dn.jpg";
+import indoor_dn from "../assets/skyboxes/indoor/indoor_dn.jpg"; */
+import sky_ft from "../assets/skyboxes/sky/sky_ft.png";
+import sky_bk from "../assets/skyboxes/sky/sky_bk.png";
+import sky_lf from "../assets/skyboxes/sky/sky_lf.png";
+import sky_rt from "../assets/skyboxes/sky/sky_rt.png";
+import sky_up from "../assets/skyboxes/sky/sky_up.png";
+import sky_dn from "../assets/skyboxes/sky/sky_dn.png";
 
 const OBJECTS = {
     scene: new THREE.Scene(),
@@ -29,12 +37,13 @@ const OBJECTS = {
 const dataService = new DataService();
 
 export default {
-    name: 'GameView',
+    name: 'ObjectEditor',
     props: {
         msg: String
     },
     components: {
-        ObjectPainter
+        ColorPalette,
+        ToolBar
     },
     data() {
         return {
@@ -44,9 +53,44 @@ export default {
                 blockLength: 16
             },
             control: {
+                toolBarButtons: [
+                    {
+                        label: "Save",
+                        icon: ['fa-regular', 'fa-floppy-disk'],
+                        action(){
+                            console.log("Save");
+                        }
+                    },
+                    {
+                        label: "Open",
+                        icon: ['fa-solid', 'fa-box-open'],
+                        action(){
+                            console.log("Open");
+                        }
+                    }
+                ],
                 selectedColor: null,
                 lastTimestamp: null,
-                keydown: {}
+                keydown: {},
+                colors: [
+                    "#000000",
+                    "#575757",
+                    "#a0a0a0",
+                    "#ffffff",
+                    "#2a4bd7",
+                    "#1d6914",
+                    "#814a19",
+                    "#8126c0",
+                    "#9dafff",
+                    "#81c57a",
+                    "#e9debb",
+                    "#ad2323",
+                    "#29d0d0",
+                    "#ffee33",
+                    "#ff9233",
+                    "#ffcdf3"
+                ],
+                materials:{}
             },
             input: {
                 editObject: {},
@@ -82,7 +126,8 @@ export default {
         if (this.input.editObject) {
             console.log("edit");
             this.loadObject();
-        } else {this.input.editObject = {}
+        } else {
+            this.input.editObject = {}
             let box = this.createBox(0xffffff, { x: 0, y: 0, z: 0 });
             if (box) {
                 console.log("box1")
@@ -170,6 +215,7 @@ export default {
                 }
                 object3D.removeFromParent();
                 delete this.input.editObject[`x${object3D.position.x}y${object3D.position.y}z${object3D.position.z}`];
+                dataService.setData('editObject', this.input.editObject);
             }
         },
         onMouseObject(e) {
@@ -182,7 +228,6 @@ export default {
         },
         loadObject() {
             Object.values(this.input.editObject).forEach(boxInfo => {
-                console.log(boxInfo);
                 const box = this.createBox(boxInfo.color, boxInfo.pos, true);
                 if (box) {
                     OBJECTS.scene.add(box);
@@ -191,7 +236,7 @@ export default {
         },
         createSkyBoxTexture() {
             const skyboxImagepaths = [
-                indoor_bk, indoor_ft, indoor_up, indoor_dn, indoor_rt, indoor_lf
+                sky_rt, sky_lf, sky_up, sky_dn, sky_ft, sky_bk,
             ];
             return new THREE.CubeTextureLoader().load(skyboxImagepaths);
         },
@@ -234,10 +279,13 @@ export default {
         },
         createBox: function (color, pos, loading) {
             if (!this.input.editObject[`x${pos.x}y${pos.y}z${pos.z}`] || loading) {
-                let boxGeom = new RoundedBoxGeometry(this.config.brickSize, this.config.brickSize, this.config.brickSize, 1, 1);
-                /* let boxGeom = new THREE.BoxGeometry(this.config.brickSize, this.config.brickSize, this.config.brickSize); */
+                /* let boxGeom = new RoundedBoxGeometry(this.config.brickSize, this.config.brickSize, this.config.brickSize, 1, 1); */
+                let boxGeom = new THREE.BoxGeometry(this.config.brickSize, this.config.brickSize, this.config.brickSize);
 
-                let boxMat = new THREE.MeshLambertMaterial({ color: color });
+                if(!this.control.materials[color]){
+                    this.control.materials[color] = new THREE.MeshLambertMaterial({ color: color });
+                }
+                let boxMat = this.control.materials[color];
                 let box = new THREE.Mesh(boxGeom, boxMat);
                 if (pos) {
                     box.position.set(pos.x, pos.y, pos.z);
@@ -251,7 +299,9 @@ export default {
                     }
                 }
                 //test
-                dataService.setData('editObject', this.input.editObject);
+                if(!loading){
+                    dataService.setData('editObject', this.input.editObject);
+                }
 
                 return box;
             }

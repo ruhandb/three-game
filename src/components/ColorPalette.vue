@@ -2,21 +2,18 @@
 <template>
     <div class="container">
         <div class="colorPicker" :class="{ selected: color == controls.selectedColor }" v-for="color in colors"
-            :style="{ backgroundColor: color }" @click="$emit('onSetBlock', color); controls.selectedColor = color"></div>
+            :style="{ backgroundColor: color }" @click="$emit('onSetBlock', color); controls.selectedColor = color">
+        </div>
     </div>
 </template>
 
 <script>
 export default {
-    props: ['brickSize'],
     data() {
         return {
             controls: {
-                selectedColor: null,
-                selectedIndex: 0,
-                selectedAxis: 'x',
+                selectedColor: "#ffffff",
             },
-            matrix: [],
             colors: [
                 "#000000",
                 "#575757",
@@ -38,29 +35,8 @@ export default {
         }
     },
     computed: {
-        selectedArray() {
-            if (this.controls.selectedAxis == 'x') {
-                return this.matrix[this.controls.selectedIndex];
-            }
-            if (this.controls.selectedAxis == 'y') {
-                return this.matrix.map(a => a[this.controls.selectedIndex]);
-            }
-            if (this.controls.selectedAxis == 'z') {
-                return this.matrix.map(a => a.map(b => b[this.controls.selectedIndex]));
-            }
-        }
     },
     created() {
-        for (let i = 0; i < this.brickSize; i++) {
-            this.matrix.push([]);
-            for (let j = 0; j < this.brickSize; j++) {
-                this.matrix[i].push([]);
-                for (let k = 0; k < this.brickSize; k++) {
-                    this.matrix[i][j].push({ color: null, pos: { x: i, y: j, z: k } });
-                }
-            }
-        }
-        console.log(this.matrix);
     },
 }
 </script>
@@ -84,8 +60,11 @@ export default {
         margin-right: 5px;
         border-radius: 5px;
         cursor: pointer;
+
         &.selected {
-            border: 1px solid pink;
+            border: 2px solid red;
+            height: 36px;
+            width: 36px;
         }
     }
 }
